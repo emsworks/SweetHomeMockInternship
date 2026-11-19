@@ -29,6 +29,7 @@ import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.lang.reflect.InvocationTargetException;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -2022,7 +2023,7 @@ public class PlanComponent extends JComponent implements PlanView, Scrollable, P
     try {
       int levelPageIndex = pageIndex;
       for (Level level : printedLevels) {
-        this.home.setSelectedLevel(level);
+        setSelectedLevelOnEDT(level);
         int levelPageCount = getSelectedLevelPageCount(g, pageFormat);
         if (levelPageIndex < levelPageCount) {
           return printSelectedLevel(g, pageFormat, levelPageIndex);
@@ -2032,7 +2033,29 @@ public class PlanComponent extends JComponent implements PlanView, Scrollable, P
       return NO_SUCH_PAGE;
     } finally {
       // Selected level is only temporary state during printing
-      this.home.setSelectedLevel(selectedLevel);
+      setSelectedLevelOnEDT(selectedLevel);
+    }
+  }
+
+  /**
+   * Changes the selected level in the Event Dispatch Thread, because listeners
+   * of the selected level update Swing components and printing may run in another thread.
+   */
+  private void setSelectedLevelOnEDT(final Level level) {
+    if (EventQueue.isDispatchThread()) {
+      this.home.setSelectedLevel(level);
+    } else {
+      try {
+        EventQueue.invokeAndWait(new Runnable() {
+            public void run() {
+              home.setSelectedLevel(level);
+            }
+          });
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      } catch (InvocationTargetException ex) {
+        throw new RuntimeException(ex.getCause());
+      }
     }
   }
 

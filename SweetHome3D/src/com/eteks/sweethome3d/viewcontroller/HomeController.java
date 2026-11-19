@@ -2518,7 +2518,7 @@ public class HomeController implements Controller {
    * Controls the print of this home.
    */
   public void print() {
-    final Callable<Void> printTask = getView().showPrintDialog();    
+    final Callable<Void> printTask = getView().showPrintDialog();
     if (printTask != null) {
       // Print in a threaded task
       ThreadedTaskController.ExceptionHandler exceptionHandler = 
@@ -2526,6 +2526,7 @@ public class HomeController implements Controller {
             public void handleException(Exception ex) {
               if (!(ex instanceof InterruptedRecorderException)) {
                 if (ex instanceof RecorderException) {
+                  ex.printStackTrace();
                   String message = preferences.getLocalizedString(
                       HomeController.class, "printError", home.getName());
                   getView().showError(message);
